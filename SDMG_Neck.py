@@ -12,6 +12,7 @@ def box_roi(box_list):
         # else:
         #     rois = bboxes.new_zeros((0, 5))
 
+
         img_inds = bboxes.new_full((bboxes.size(0), 1), img_id)
         rois = torch.cat([img_inds, bboxes[:, :4]], dim=-1)
 

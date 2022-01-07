@@ -50,7 +50,8 @@ class SDMGRHead(nn.Module):
                  text.new_zeros(text.size(0), max_num - text.size(1))], -1)
             for text in texts
         ])
-        embed_nodes = self.node_embed(all_nodes.clamp(min=0).long())
+        clamp_node = torch.clamp(all_nodes, min=0).long()
+        embed_nodes = self.node_embed(clamp_node)
         rnn_nodes, _ = self.rnn(embed_nodes)
 
         nodes = rnn_nodes.new_zeros(*rnn_nodes.shape[::2])
@@ -72,6 +73,11 @@ class SDMGRHead(nn.Module):
 
         node_cls, edge_cls = self.node_cls(nodes), self.edge_cls(cat_nodes)
         return node_cls, edge_cls
+
+
+@torch.jit.script
+def slice_helper(x, start, end):
+    return x[start:end]
 
 
 class GNNLayer(nn.Module):
@@ -97,18 +103,23 @@ class GNNLayer(nn.Module):
         cat_nodes = self.relu(self.in_fc(cat_nodes))
         coefs = self.coef_fc(cat_nodes)
 
-        start, residuals = 0, []
-        for num in nums:
-            residual = F.softmax(
-                -torch.eye(num,num).to(coefs.device).unsqueeze(-1) * 1e9 +
-                coefs[start:start + num ** 2].view(num, num, -1), 1)
+        start2, residuals = 0, []
+        for num2 in nums:
+            ss = -torch.eye(num2, num2).to(coefs.device).unsqueeze(-1) * 1e9
+            cc = ss + coefs[start2:start2 + num2 ** 2].view(num2, num2, -1)
+            print(num2)
+            residual = F.softmax(cc, 1)
             residuals.append(
                 (residual *
-                 cat_nodes[start:start + num ** 2].view(num, num, -1)).sum(1))
-            start += num ** 2
+                 cat_nodes[start2:start2 + num2 ** 2].view(num2, num2, -1)).sum(1))
+            start2 += num2 ** 2
 
-        nodes += self.relu(self.out_fc(torch.cat(residuals)))
-        return nodes, cat_nodes
+        tmpre = torch.cat(residuals)
+        tmpout = self.out_fc(tmpre)
+        tmprelu = self.relu(tmpout)
+        out = nodes + tmprelu
+
+        return out, cat_nodes
 
 
 class Block(nn.Module):

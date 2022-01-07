@@ -11,22 +11,20 @@ class SDMG_R(nn.Module):
         self.neck = SdmgNeck()
         self.head = SDMGRHead()
 
-    def _prepare(self, pic, relations, texts, gt_bboxes):
-        batch_pic = pic
+    def _prepare(self, relations, texts):
         rela = []
         txt = []
-        bboxes = []
         for batch_idx, _tag in enumerate(texts):
             rela.append(relations[batch_idx, :, :, :])
             txt.append(texts[batch_idx, :, :])
-            bboxes.append(gt_bboxes[batch_idx, :, :])
 
-        return batch_pic, rela, txt, bboxes
+        return rela, txt
 
-    def forward(self, pic, relations, texts, gt_bboxes):
-        img, rela, txt, bbox = self._prepare(pic, relations, texts, gt_bboxes)
+    def forward(self, relations, texts):
+        rela, txt = self._prepare(relations, texts)
 
-        x = self.backbone(img)
-        x = self.neck(x, bbox)
-        x = self.head(rela, txt, x)
+        # x = self.backbone(img)
+        # x = self.neck(x, bbox)
+        # x = self.head(rela, txt, x)
+        x = self.head(rela, txt, None)
         return x

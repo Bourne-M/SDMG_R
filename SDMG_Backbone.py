@@ -84,8 +84,6 @@ class UNet(nn.Module):
             self.encoder.append((nn.Sequential(*enc_conv_block)))
             in_channels = base_channels * 2 ** i
 
-
-
     def forward(self, x):
         self._check_input_divisible(x)
         enc_outs = []
@@ -104,6 +102,7 @@ class UNet(nn.Module):
         for i in range(1, self.num_stages):
             if self.strides[i] == 2 or self.downsamples[i - 1]:
                 whole_downsample_rate *= 2
+
 
 class UpConvBlock(nn.Module):
     def __init__(self,

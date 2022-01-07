@@ -29,7 +29,7 @@ char_dict = {
 def pad_text_indices(text_inds, normal_seq_len=300):
     """Pad text index to same length."""
     real_seq_len = max([len(text_ind) for text_ind in text_inds])
-    padded_text_inds = -np.ones((len(text_inds), real_seq_len), np.int32)
+    padded_text_inds = -np.ones((len(text_inds), 30), np.int32)
     for idx, text_ind in enumerate(text_inds):
         padded_text_inds[idx, :len(text_ind)] = np.array(text_ind)
     return padded_text_inds, real_seq_len
@@ -78,8 +78,7 @@ def read_data():
 
 
 def data_prepare(_img, _boxes):
-    # standard_scale = [1024, 512]
-    standard_scale = [856, 540]
+    standard_scale = [1024, 512]
     h, w, _ = _img.shape
 
     scale_factor = min(max(standard_scale) / max(h, w), min(standard_scale) / min(h, w))
@@ -93,8 +92,8 @@ def data_prepare(_img, _boxes):
     scale_a = np.array([w_scale, h_scale, w_scale, h_scale], dtype=np.float32)
     n_img = normalize(img)
     p_img = impad_to_multiple(n_img)
-    # norm_pic = np.zeros((1024, 1024, 3), dtype=np.float32)
-    # norm_pic[:p_img.shape[0], :p_img.shape[1], :] = p_img
+    norm_pic = np.zeros((1024, 1024, 3), dtype=np.float32)
+    norm_pic[:p_img.shape[0], :p_img.shape[1], :] = p_img
 
     boxes, texts, text_inds, labels, edges = [], [], [], [], []
     for _box in _boxes:
@@ -122,8 +121,7 @@ def data_prepare(_img, _boxes):
     # resize relations
     factor = np.array([w_scale, h_scale, w_scale / h_scale, 1, w_scale / h_scale]).astype(np.float32)
     relations = relations * factor[None, None]
-    # r_img = norm_pic.transpose(2, 0, 1)
-    r_img = p_img.transpose(2, 0, 1)
+    r_img = norm_pic.transpose(2, 0, 1)
     r_relation = relations
     r_text = padded_text_inds
     r_box = new_bboxes
@@ -140,7 +138,9 @@ def infer(_data):
         relations = torch.tensor(relations).unsqueeze(0).to(to_use_device)
         texts = torch.tensor(texts).unsqueeze(0).to(to_use_device)
         boxes = torch.tensor(boxes).unsqueeze(0).to(to_use_device)
-        pred_nd, pred_eg = model.forward(img, relations, texts, boxes)
+        tag = torch.tensor(tag).unsqueeze(0).to(to_use_device)
+        # pred_nd, pred_eg = model.forward(img, relations, texts, boxes, tag)
+        pred_nd, pred_eg = model.forward( relations, texts)
         pred_nd = F.softmax(pred_nd, -1)
     return pred_nd.argmax(1)
 

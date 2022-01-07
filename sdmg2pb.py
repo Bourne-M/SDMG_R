@@ -9,7 +9,7 @@ import os
 import tensorflow as tf
 import torch.jit
 from onnx_tf.backend import prepare
-import time
+
 import random
 from infer import read_data, data_prepare
 
@@ -28,14 +28,10 @@ def torch2pb():
     onnx_file_path = "./test_sdmg.onnx"
     relations = torch.randn(1, 10, 10, 5)
     texts = torch.randn(1, 10, 10)
-    img = torch.randn(1, 3, 1024, 1024)
-    boxes = torch.randn(1, 10, 4)
 
     relations = relations.to(to_use_device)
     texts = texts.to(to_use_device)
     dynamic_axes = {
-        'img': {0: 'batch_size', 2: 'height', 3: "width"},
-        'boxes': {0: 'batch_size', 1: "nums"},
         'relations': {0: 'batch_size', 1: 'nums', 2: 'nums'},
         'texts': {0: 'batch_size', 1: "nums", 2: "seq"},
         'seg_map': {0: 'batch_size', 1: "pro"},
@@ -43,12 +39,12 @@ def torch2pb():
     }
 
     torch.onnx.export(model,  # model being run
-                      (img, relations, texts, boxes),  # model input (or a tuple for multiple inputs)
+                      (relations, texts),  # model input (or a tuple for multiple inputs)
                       onnx_file_path,  # where to save the model (can be a file or file-like object)
                       export_params=True,  # store the trained parameter weights inside the model file
                       opset_version=12,  # the ONNX version to export the model to
                       do_constant_folding=True,  # whether to execute constant folding for optimization
-                      input_names=['img', 'relations', 'texts', 'boxes'],  # the model's input names
+                      input_names=['relations', 'texts'],  # the model's input names
                       output_names=["seg_map", 'seg_map2'],  # the model's output names
                       dynamic_axes=dynamic_axes,
                       # verbose=True,
@@ -72,7 +68,6 @@ def test():
     os.makedirs(save_dir, exist_ok=True)
 
     data = read_data()
-    total = 0
     for item in data:
         file_name = item['file_name']
         img_path = os.path.join(DATA_DIR, file_name)
@@ -84,14 +79,10 @@ def test():
         data_prepared = data_prepare(img, boxes1)
         img, relations, texts, boxes, tag = data_prepared
 
-        img = tf.convert_to_tensor(np.expand_dims(img, axis=0), dtype=tf.float32)
         relations = tf.convert_to_tensor(np.expand_dims(relations, axis=0), dtype=tf.float32)
         texts = tf.convert_to_tensor(np.expand_dims(texts, axis=0), dtype=tf.float32)
-        boxes = tf.convert_to_tensor(np.expand_dims(boxes, axis=0), dtype=tf.float32)
-        stime = time.time()
-        outputs = inference(img=img, relations=relations, texts=texts, boxes=boxes)
-        cost = time.time() - stime
-        total += cost
+
+        outputs = inference(relations=relations, texts=texts)
         s = outputs['output_0'].numpy().argmax(1)
         for idx, _b in enumerate(boxes1):
             pos = (_b['box'][0], _b['box'][1])
@@ -99,9 +90,9 @@ def test():
             cv2.putText(debug_img, str_cls, pos, cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
         cv2.imwrite(save_path, debug_img)
 
-    print(total/len(data))
+        pass
 
 
 if __name__ == '__main__':
-    torch2pb()
+    # torch2pb()
     test()

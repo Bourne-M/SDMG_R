@@ -7,7 +7,7 @@ from tqdm import tqdm
 from SDMG_Model import SDMG_R
 from SDMG_Loss import SDMGLoss
 from utils import save_pth, compute_f1_score, Log
-from SDMG_Dataset import SMGDataset
+from SDMG_Dataset import SMGDataset, my_collate
 from torch.utils.data import DataLoader
 from torch.nn import functional as F
 
@@ -24,7 +24,7 @@ def evalu(model, val_loader, log, device):
             img, rel, txt, bbox, tag, lab = data['img'], data['relations'], data['texts'], data['gt_bboxes'], data['tag'], data['gt_labels']
             for batch_idx, _tag in enumerate(tag):
                 node_gts.append(lab[batch_idx, :, 0])
-            pred_nd, pred_eg = model.forward( img,rel, txt,bbox)
+            pred_nd, pred_eg = model.forward(rel, txt)
             pred_nd = F.softmax(pred_nd, -1)
             node_preds.append(pred_nd)
     node_preds = torch.cat(node_preds)
@@ -39,7 +39,7 @@ def evalu(model, val_loader, log, device):
 def train(_model, _loss_func, _train_loader, _val_loader, _optim, _scheduler, _log, _device, _max_epoch, eval_iterval, model_save_dir):
     best_mode = {'f1': 0, 'best_epoch': 0}
     _log.log_str(f'start training ....')
-    f1 = evalu(_model, _val_loader, _log, _device)
+    # f1 = evalu(_model, _val_loader, _log, _device)
     for epoch in range(_max_epoch):
         for i, data in enumerate(_train_loader):
             _model.train()
@@ -48,7 +48,7 @@ def train(_model, _loss_func, _train_loader, _val_loader, _optim, _scheduler, _l
                     data[k] = val.to(_device)
             img, rel, txt, bbox, tag, lab = data['img'], data['relations'], data['texts'], data['gt_bboxes'], data['tag'], data['gt_labels']
             _optim.zero_grad()
-            pred_nd, pred_eg = _model.forward(img, rel, txt,bbox)
+            pred_nd, pred_eg = _model.forward( rel, txt)
 
             losslab = []
             for batch_idx, _tag in enumerate(tag):
