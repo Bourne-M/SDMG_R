@@ -184,7 +184,7 @@ class SMGDataset(Dataset):
                 edges = (edges[:, None] == edges[None, :]).astype(np.int32)
                 if self.directed:
                     edges = (edges & labels == 1).astype(np.int32)
-                np.fill_diagonal(edges, 20)
+                np.fill_diagonal(edges, 100)
                 labels = np.concatenate([labels, edges], -1)
         padded_text_inds, seq_len = pad_text_indices(text_inds)
 
@@ -199,7 +199,7 @@ class SMGDataset(Dataset):
         temp_padded_text_inds = np.zeros([max_node_num, max_node_num], dtype=np.float32)
         temp_padded_text_inds[:h, :] = padded_text_inds
 
-        temp_labels = np.ones([max_node_num, max_node_num + 1], dtype=np.int32)*20
+        temp_labels = np.ones([max_node_num, max_node_num + 1], dtype=np.int32)*100
         temp_labels[:h, :h + 1] = labels
 
         tag = np.array([h, seq_len])

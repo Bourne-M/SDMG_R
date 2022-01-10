@@ -7,8 +7,8 @@ from SDMG_Backbone import UNet
 class SDMG_R(nn.Module):
     def __init__(self):
         super(SDMG_R, self).__init__()
-        self.backbone = UNet(base_channels=16)
-        self.neck = SdmgNeck()
+        # self.backbone = UNet(base_channels=16)
+        # self.neck = SdmgNeck()
         self.head = SDMGRHead()
 
     def _prepare(self, relations, texts):
