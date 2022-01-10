@@ -29,8 +29,8 @@ def accuracy(pred, tareget, topk=1, thresh=None):
 class SDMGLoss(nn.Module):
     def __init__(self, node_weight=1.0, edge_weight=1.0, ignore=-100):
         super(SDMGLoss, self).__init__()
-        self.loss_node = nn.CrossEntropyLoss(ignore_index=20)
-        self.loss_edge = nn.CrossEntropyLoss(ignore_index=20)
+        self.loss_node = nn.CrossEntropyLoss(ignore_index=100)
+        self.loss_edge = nn.CrossEntropyLoss(ignore_index=100)
         self.node_weight = node_weight
         self.edge_weight = edge_weight
         self.ignore = ignore
@@ -43,8 +43,8 @@ class SDMGLoss(nn.Module):
         node_gts = torch.cat(node_gts).long()
         edge_gts = torch.cat(edge_gts).long()
 
-        node_valids = torch.nonzero(node_gts != 20, as_tuple=False).view(-1)
-        edge_valids = torch.nonzero(edge_gts != 20, as_tuple=False).view(-1)
+        node_valids = torch.nonzero(node_gts != 100, as_tuple=False).view(-1)
+        edge_valids = torch.nonzero(edge_gts != 100, as_tuple=False).view(-1)
         n_loss = self.node_weight * self.loss_node(node_preds, node_gts)
         e_loss = self.edge_weight * self.loss_edge(edge_preds, edge_gts)
         a_loss = n_loss + e_loss

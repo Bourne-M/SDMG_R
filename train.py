@@ -1,7 +1,7 @@
 import os
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import torch
 from tqdm import tqdm
 from SDMG_Model import SDMG_R
@@ -37,7 +37,7 @@ def evalu(model, val_loader, log, device):
 def train(_model, _loss_func, _train_loader, _val_loader, _optim, _scheduler, _log, _device, _max_epoch, eval_iterval, model_save_dir):
     best_mode = {'f1': 0, 'best_epoch': 0}
     _log.log_str(f'start training ....')
-    f1 = evalu(_model, _val_loader, _log, _device)
+    # f1 = evalu(_model, _val_loader, _log, _device)
     for epoch in range(_max_epoch):
         for i, data in enumerate(_train_loader):
             _model.train()
@@ -78,19 +78,19 @@ if __name__ == '__main__':
     to_use_device = torch.device('cuda')
     model_save_dir = '/path/to/your/workspace/test/'
 
-    # train_label = '/path/to/your/workspace/dataset/wildreceipt/train.txt'
-    # val_label = '/path/to/your/workspace/dataset/wildreceipt/test.txt'
-    # dic_path = '/path/to/your/workspace/dataset/wildreceipt/dict.txt'
-    # pic_root = '/path/to/your/workspace/dataset/wildreceipt'
+    train_label = '/path/to/your/workspace/dataset/wildreceipt/train.txt'
+    val_label = '/path/to/your/workspace/dataset/wildreceipt/test.txt'
+    dic_path = '/path/to/your/workspace/dataset/wildreceipt/dict.txt'
+    pic_root = '/path/to/your/workspace/dataset/wildreceipt'
 
-    train_label = '/path/to/your/workspace/dataset/ceshi/train_new.txt'
-    val_label = '/path/to/your/workspace/dataset/ceshi/test_new.txt'
-    dic_path = '/path/to/your/workspace/dataset/ceshi/dict.txt'
-    pic_root = '/path/to/your/workspace/dataset/ceshi/image/'
+    # train_label = '/path/to/your/workspace/dataset/ceshi/train_new.txt'
+    # val_label = '/path/to/your/workspace/dataset/ceshi/test_new.txt'
+    # dic_path = '/path/to/your/workspace/dataset/ceshi/dict.txt'
+    # pic_root = '/path/to/your/workspace/dataset/ceshi/image/'
 
     train_dataset = SMGDataset(train_label, dic_path, pic_root)
     val_dataset = SMGDataset(val_label, dic_path, pic_root)
-    train_loader = DataLoader(dataset=train_dataset, batch_size=10, shuffle=True, num_workers=6)
+    train_loader = DataLoader(dataset=train_dataset, batch_size=8, shuffle=True, num_workers=6)
     val_loader = DataLoader(dataset=val_dataset, batch_size=1, shuffle=False, num_workers=0)
 
     log = Log(max_epoch, len(train_loader), print_step_iterval)

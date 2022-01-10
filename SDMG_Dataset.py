@@ -66,7 +66,7 @@ def _load_data(_path, encoding='utf-8'):
 
 
 class SMGDataset(Dataset):
-    def __init__(self, _path, _char_path, _pic_root, scale=None, _norm=10, _max_content_len=25, _max_node_num=30,_ignore=100):
+    def __init__(self, _path, _char_path, _pic_root, scale=None, _norm=10, _max_content_len=150, _max_node_num=250, _ignore=100):
         super(SMGDataset, self).__init__()
         if scale is None:
             scale = [1024, 512]
@@ -83,7 +83,7 @@ class SMGDataset(Dataset):
         self.scale = scale
         self.max_content_len = _max_content_len
         self.max_node_num = _max_node_num
-        self.ignore=_ignore
+        self.ignore = _ignore
 
     def _str2_json(self, _str):
         res = {}
@@ -198,7 +198,7 @@ class SMGDataset(Dataset):
         temp_relations = np.zeros([self.max_node_num, self.max_node_num, 5], dtype=np.float32)
         temp_relations[:h, :h, :] = relations
 
-        temp_padded_text_inds = np.zeros([self.max_node_num, self.max_node_num], dtype=np.float32)
+        temp_padded_text_inds = np.zeros([self.max_node_num, self.max_content_len], dtype=np.float32)
         temp_padded_text_inds[:h, :] = padded_text_inds
 
         temp_labels = np.ones([self.max_node_num, self.max_node_num + 1], dtype=np.int32) * self.ignore

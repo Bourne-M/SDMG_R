@@ -7,7 +7,6 @@ from torch.nn import functional as F
 class SDMGRHead(nn.Module):
     def __init__(self,
                  num_chars=92,
-                 # num_chars=3808,
                  visual_dim=16,
                  fusion_dim=1024,
                  node_input=32,
@@ -16,7 +15,6 @@ class SDMGRHead(nn.Module):
                  edge_embed=256,
                  num_gnn=2,
                  num_classes=26,
-                 # num_classes=9,
                  bidirectional=False,
                  ):
         super().__init__()
@@ -100,7 +98,7 @@ class GNNLayer(nn.Module):
         start, residuals = 0, []
         for num in nums:
             residual = F.softmax(
-                -torch.eye(num,num).to(coefs.device).unsqueeze(-1) * 1e9 +
+                -torch.eye(num, num).to(coefs.device).unsqueeze(-1) * 1e9 +
                 coefs[start:start + num ** 2].view(num, num, -1), 1)
             residuals.append(
                 (residual *
