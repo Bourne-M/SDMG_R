@@ -9,7 +9,7 @@ class SDMG_R(nn.Module):
         super(SDMG_R, self).__init__()
         self.backbone = UNet(base_channels=16)
         self.neck = SdmgNeck()
-        self.head = SDMGRHead()
+        self.head = SDMGRHead(num_chars=92, num_classes=26)
 
     def _prepare(self, pic, relations, texts, gt_bboxes):
         batch_pic = pic

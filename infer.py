@@ -26,7 +26,7 @@ char_dict = {
     }}
 
 
-def pad_text_indices(text_inds, normal_seq_len=300):
+def pad_text_indices(text_inds):
     """Pad text index to same length."""
     real_seq_len = max([len(text_ind) for text_ind in text_inds])
     padded_text_inds = -np.ones((len(text_inds), real_seq_len), np.int32)

@@ -65,22 +65,14 @@ def _load_data(_path, encoding='utf-8'):
     return data_list
 
 
-def pad_text_indices(text_inds, normal_seq_len=30):
-    """Pad text index to same length."""
-    real_seq_len = max([len(text_ind) for text_ind in text_inds])
-    padded_text_inds = -np.ones((len(text_inds), normal_seq_len), np.int32)
-    for idx, text_ind in enumerate(text_inds):
-        padded_text_inds[idx, :len(text_ind)] = np.array(text_ind)
-    return padded_text_inds, real_seq_len
-
-
 class SMGDataset(Dataset):
-    def __init__(self, _path, _char_path, _pic_root, _norm=10, _long_size=960):
+    def __init__(self, _path, _char_path, _pic_root, scale=None, _norm=10, _max_content_len=25, _max_node_num=30):
         super(SMGDataset, self).__init__()
+        if scale is None:
+            scale = [1024, 512]
         self.data_list = _load_data(_path)
         self.norm = _norm
         self.pic_root = _pic_root
-        self.long_size = _long_size
         self.dict = {
             '': 0,
             **{
@@ -88,7 +80,9 @@ class SMGDataset(Dataset):
                 for ind, line in enumerate(_load_data(_char_path), 1)
             }}
         self.directed = False
-        self.scale = [1024, 512]
+        self.scale = scale
+        self.max_content_len = _max_content_len
+        self.max_node_num = _max_node_num
 
     def _str2_json(self, _str):
         res = {}
@@ -168,6 +162,14 @@ class SMGDataset(Dataset):
             labels=labels)
         return self.list_to_numpy(ann_infos)
 
+    def pad_text_indices(self, text_inds):
+        """Pad text index to same length."""
+        real_seq_len = max([len(text_ind) for text_ind in text_inds])
+        padded_text_inds = -np.ones((len(text_inds), self.max_content_len), np.int32)
+        for idx, text_ind in enumerate(text_inds):
+            padded_text_inds[idx, :len(text_ind)] = np.array(text_ind)
+        return padded_text_inds, real_seq_len
+
     def list_to_numpy(self, ann_infos):
         """Convert bboxes, relations, texts and labels to ndarray."""
         boxes, text_inds = ann_infos['boxes'], ann_infos['text_inds']
@@ -186,20 +188,19 @@ class SMGDataset(Dataset):
                     edges = (edges & labels == 1).astype(np.int32)
                 np.fill_diagonal(edges, 20)
                 labels = np.concatenate([labels, edges], -1)
-        padded_text_inds, seq_len = pad_text_indices(text_inds)
+        padded_text_inds, seq_len = self.pad_text_indices(text_inds)
 
-        max_node_num = 30
-        temp_bboxes = np.zeros([max_node_num, 4], dtype=np.float32)
+        temp_bboxes = np.zeros([self.max_node_num, 4], dtype=np.float32)
         h, _ = bboxes.shape
         temp_bboxes[:h, :] = bboxes
 
-        temp_relations = np.zeros([max_node_num, max_node_num, 5], dtype=np.float32)
+        temp_relations = np.zeros([self.max_node_num, self.max_node_num, 5], dtype=np.float32)
         temp_relations[:h, :h, :] = relations
 
-        temp_padded_text_inds = np.zeros([max_node_num, max_node_num], dtype=np.float32)
+        temp_padded_text_inds = np.zeros([self.max_node_num, self.max_node_num], dtype=np.float32)
         temp_padded_text_inds[:h, :] = padded_text_inds
 
-        temp_labels = np.ones([max_node_num, max_node_num + 1], dtype=np.int32)*20
+        temp_labels = np.ones([self.max_node_num, self.max_node_num + 1], dtype=np.int32) * 20
         temp_labels[:h, :h + 1] = labels
 
         tag = np.array([h, seq_len])
