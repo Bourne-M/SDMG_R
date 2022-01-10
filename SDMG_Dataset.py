@@ -66,7 +66,7 @@ def _load_data(_path, encoding='utf-8'):
 
 
 class SMGDataset(Dataset):
-    def __init__(self, _path, _char_path, _pic_root, scale=None, _norm=10, _max_content_len=25, _max_node_num=30):
+    def __init__(self, _path, _char_path, _pic_root, scale=None, _norm=10, _max_content_len=25, _max_node_num=30,_ignore=100):
         super(SMGDataset, self).__init__()
         if scale is None:
             scale = [1024, 512]
@@ -83,6 +83,7 @@ class SMGDataset(Dataset):
         self.scale = scale
         self.max_content_len = _max_content_len
         self.max_node_num = _max_node_num
+        self.ignore=_ignore
 
     def _str2_json(self, _str):
         res = {}
@@ -186,7 +187,7 @@ class SMGDataset(Dataset):
                 edges = (edges[:, None] == edges[None, :]).astype(np.int32)
                 if self.directed:
                     edges = (edges & labels == 1).astype(np.int32)
-                np.fill_diagonal(edges, 20)
+                np.fill_diagonal(edges, self.ignore)
                 labels = np.concatenate([labels, edges], -1)
         padded_text_inds, seq_len = self.pad_text_indices(text_inds)
 
@@ -200,7 +201,7 @@ class SMGDataset(Dataset):
         temp_padded_text_inds = np.zeros([self.max_node_num, self.max_node_num], dtype=np.float32)
         temp_padded_text_inds[:h, :] = padded_text_inds
 
-        temp_labels = np.ones([self.max_node_num, self.max_node_num + 1], dtype=np.int32) * 20
+        temp_labels = np.ones([self.max_node_num, self.max_node_num + 1], dtype=np.int32) * self.ignore
         temp_labels[:h, :h + 1] = labels
 
         tag = np.array([h, seq_len])

@@ -29,9 +29,7 @@ def evalu(model, val_loader, log, device):
             node_preds.append(pred_nd)
     node_preds = torch.cat(node_preds)
     node_gts = torch.cat(node_gts).int()
-    node_f1s = compute_f1_score(node_preds, node_gts, [20])
-    # node_f1s = compute_f1_score(node_preds, node_gts, [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25])
-    # node_f1s = compute_f1_score(node_preds, node_gts, [])
+    node_f1s = compute_f1_score(node_preds, node_gts, [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25,100])
     log.log_str(f'val:{node_f1s.mean()}')
     return node_f1s.mean()
 
